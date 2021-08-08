@@ -1,0 +1,73 @@
+body {
+  padding-top: 20px;
+}
+
+#headerWrapper {
+    width: 100%;
+	height: 80px;
+}
+
+.logo {
+    padding: 10px;
+    margin-right: 10x;
+    font-size: 35px;
+    font-family: fantasy;
+}
+
+.tagline {
+    font-size: 10px;
+    margin-top: 50px;
+    /* margin-left: -123px; */
+    margin-left: -80px;
+    font-family: monospace;
+}
+
+.nav-wrapper {
+    margin-left: 100px;
+    margin-top: 15px;
+}
+
+#ListWrapper {
+	width: 100%;
+	padding: 10px;
+}
+
+#ListWrapper input {
+	width: 25%;
+}
+
+#ListWrapper .product {
+	border: 1px solid gray;
+	padding: 10px;
+	margin-bottom: 10px;
+	/* background: white url(static/img/{{product.imgUrl}}) no-repeat; */
+	/* min-height: 200px; */
+}
+
+#ListWrapper .product .product-details {
+	margin-left: 200px;
+}
+
+
+.products {
+  list-style: none;
+}
+
+.products li {
+  clear: both;
+  height: 165px;
+  padding-top: 15px;
+}
+
+.thumb {
+  float: left;
+  height: 100px;
+  margin: -0.5em 1em 1.5em 0;
+  padding-bottom: 1em;
+  width: 150px;
+}
+
+#btnUpdate {
+  width: 200px
+				   
+}

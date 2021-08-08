@@ -1,0 +1,8 @@
+#user = 'ma'
+workers = 3
+bind = ['0.0.0.0:8080']
+accesslog = '/var/log/gunicorn/pyany.access.log'
+errorlog = '/var/log/gunicorn/pyany.error.log'
+reload = True
+loglevel = 'debug'
+

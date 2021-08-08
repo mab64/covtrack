@@ -1,0 +1,14 @@
+[Unit]
+Description=Gunicorn daemon for COVID Tracker application
+#Requires=gunicorn.socket
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/diploma
+ExecStart=/opt/python/venv/pyany/bin/gunicorn -c ./conf/gunicorn.conf.py app:app
+
+[Install]
+WantedBy=multi-user.target
+
