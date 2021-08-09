@@ -30,16 +30,38 @@ CONN = pymysql.connect(host=CONF["MYSQL_HOST"],
                        user=CONF["MYSQL_USER"],
                        passwd=CONF["MYSQL_PASSWD"], 
                        db=CONF["MYSQL_DB"])
-CUR = CONN.cursor(pymysql.cursors.DictCursor)
+#CUR = CONN.cursor(pymysql.cursors.DictCursor)
+CUR = CONN.cursor()
 
 BASE_URL = 'https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range'
 
-def get_data(date_start, date_end):
-    """Get data from COVID Tracker site."""
+def get_remote_data(date_start, date_end):
+    """Receive data from COVID Tracker site."""
     
     req = requests.get('/'.join((BASE_URL, date_start, date_end)))
     if req.status_code == 200:
         return json.loads(req.content)
+
+def get_data(params):
+    """Receive data from database, returns processed."""
+    
+    print(params, type(params))
+    periods = json.loads(params['periods'])
+    print(periods, type(periods))
+    for period in periods:
+        query = """SELECT country_code, SUM(confirmed), SUM(deaths), 
+            AVG(stringency_actual), AVG(stringency) FROM data
+            WHERE (date_value BETWEEN %s AND %s)
+            GROUP BY country_code ORDER BY SUM(stringency)"""
+        
+        query_vals = (period['date_start'], period['date_end'])
+        CUR.execute(query, query_vals)
+        data = []
+        for row in CUR.fetchall():
+            data.append((row[0], int(row[1]), int(row[2]), int(row[3]), int(row[4])))
+        print(data)
+        return data
+
 
 
 def update_data(params):
@@ -50,17 +72,17 @@ def update_data(params):
     print(periods, type(periods))
     result = 0
     for period in periods:
-        data = get_data(period['date_start'], period['date_end'])
+        data = get_remote_data(period['date_start'], period['date_end'])
         if not data:
             return False
-        result1 = insert_data(data)
+        result1 = set_data(data)
         if not result1:
             return False
         result += result1
     return result
 
-def insert_data(data):
-    """ """
+def set_data(data):
+    """Write data to database."""
     if not data:
         return    
         
@@ -120,7 +142,7 @@ def query_exec(query, query_vals, is_many=False):
 def main():
     with open('covid.json') as fp:
         data = json.load(fp)
-    insert_data(data)
+    set_data(data)
 
     
 if __name__ == '__main__':

@@ -34,22 +34,22 @@ def index():
 @app.route('/update', methods=['POST', 'GET'])
 def update():
     """Update database from COVID tracker site."""
-    print(request.get_json())
-    print('Params:', request.args)
+    #print('Params:', request.args)
     params = request.args.to_dict()
     result = tracker.update_data(params)
     print('result:', result)
     return json.dumps(result)
     
     
-@app.route("/table")
-def table():
+@app.route("/getdata", methods=['POST', 'GET'])
+def getdata():
     """Generate table output data."""
-    
+    #print('Params:', request.args)
     # request parameters.
     params = request.args.to_dict()
-    table_data = get_table_data(params)
-    return json.dumps(table_data)
+    data = tracker.get_data(params)
+    return json.dumps(data)
+
 
 @app.route("/chart")
 def chart():

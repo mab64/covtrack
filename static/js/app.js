@@ -11,11 +11,11 @@ window.onload = function() {
 	// Setup the GO button click handler.
 	document.getElementById("btnGo").onclick = function() {
 		if (document.getElementById('op_type1').checked) {
-			var route = 'table';
+			showData();
 		} else {
 			updateData();
-		};
-	};
+		}
+	}
 	// 
 	var groupbyElement = document.getElementById('group_by');
 	groupbyElement.addEventListener('change', function() {
@@ -54,26 +54,96 @@ function sendData(route) {
 }
 
 function httpRequest(url, reqType='GET', asyncProc=false) {
-  //var req = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
-  var req = new XMLHttpRequest();
-  if (asyncProc) { 
-    req.onreadystatechange = function() { 
-      if (this.readyState == 4) {
-        asyncProc(this);
-      } 
-    };
-  } else { 
-    //req.timeout = 4000;  // Reduce default 2mn-like timeout to 4 s if synchronous
-  }
-  req.open(reqType, url, asyncProc);
-  req.send();
-  if (req.status === 200 ) {
-	return req.response;
-  } else {
-	  return false;
-  }
+	//var req = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+	var req = new XMLHttpRequest();
+	if (asyncProc) { 
+		req.onreadystatechange = function() { 
+		  if (this.readyState == 4) {
+		    asyncProc(this);
+		  } 
+		}
+	} else { 
+	  //req.timeout = 4000;  // Reduce default 2mn-like timeout to 4 s if synchronous
+	}
+	req.open(reqType, url, asyncProc);
+	req.send();
+	if (req.status === 200 ) {
+		return req.response;
+	} else {
+		return false;
+	}
 }
 
+
+function drawTable(data, header) {
+	// Show Tracker's data in table.
+	
+	console.log('Head:', header);
+
+	var tblData = document.getElementById("tblData");
+	if (tblData) {
+		tblData.remove();
+	}
+	tblData = document.createElement('table');
+	tblData.setAttribute("id", "tblData");
+	tblData.setAttribute("class", "table table-striped");
+	document.getElementById('divTable').appendChild(tblData);
+	
+	var tHead = document.createElement('thead');
+	tblData.appendChild(tHead);
+	var tr = document.createElement('tr');
+	tHead.appendChild(tr);
+	for (var head of header) {
+		var td = document.createElement('td');
+		td.appendChild(document.createTextNode(head));
+		tr.appendChild(td);
+	}
+		
+	var tBody = document.createElement('tbody');
+	tblData.appendChild(tBody);
+	for (var line of data) {
+		//console.log('Line:', line);
+		var tr = document.createElement('tr');
+		for (var value of line) {
+			var td = document.createElement('td');
+			td.appendChild(document.createTextNode(value));
+			//i == 1 && j == 1 ? td.setAttribute('rowSpan', '2') : null;
+			tr.appendChild(td);
+		}
+		tBody.appendChild(tr);
+	}
+}
+
+
+function showData() {
+	// Show data in browser.
+	
+	var data = getData();
+	//console.log('data:', data);
+	var head = ['Country', 'Confirmed', 'Deaths', 'Stringency Actual', 'Stringency'];
+	drawTable(data, head);
+	
+}
+
+
+function getData() {
+	// Get Tracker's data from server.
+	
+	var params = getRequestParams(true);
+	if (!params) {
+		return false;
+	}
+	console.log('params:', params);
+
+	var data = JSON.parse(httpRequest('getdata?' + params, 'POST'));
+	//console.log('Update result:', result);
+	if (!data) {
+		alert('Get data failed.');
+		return false;
+	} else {
+		return data;
+	}
+}
 
 function updateData() {
 	//params += '&qty_time=';
@@ -83,13 +153,12 @@ function updateData() {
 	}
 	console.log('params:', params);
 
-
 	var result = JSON.parse(httpRequest('update?' + params, 'POST'));
 	//console.log('Update result:', result);
 	if (result) {
-		console.log('Update result:', result);
+		alert('Update OK: ' + result + ' rows.');
 	} else {
-		console.log('Update failed.');
+		alert('Update failed.');
 	};
 }
 
