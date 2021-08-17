@@ -2,6 +2,8 @@
 
 var cnt = 1;
 var aData = [];
+var aHead = ['Country', 'Confirmed', 'Deaths', 'String. Actual', 'Stringency'];
+
 
 var groupbyValue = '0';
 // var groupbyElement;
@@ -88,7 +90,7 @@ function drawTable(data, heads) {
 	tblData = document.createElement('table');
 	document.getElementById('divTable').appendChild(tblData);
 	tblData.setAttribute("id", "tblData");
-	tblData.setAttribute("class", "table table-striped table-hover table-bordered");
+	tblData.setAttribute("class", "table table-striped table-hover table-bordered ");
 	
 	// var tHead = document.createElement('thead');
 	// tblData.appendChild(tHead);
@@ -102,12 +104,19 @@ function drawTable(data, heads) {
 		
 	var tHead = tblData.createTHead();
     var headerRow = tHead.insertRow(0);
-	for (var head of heads) {
-		var th = document.createElement("th");
-		th.innerHTML = head;
+	var th = document.createElement("th");
+	th.innerHTML = "No";
+	headerRow.appendChild(th);
+	for (var i = 0; i < heads.length; i++) {
+		th = document.createElement("th");
+		th.innerHTML = heads[i];
+		(function(index) {
+			th.onclick = function() {
+				sortTable(index);
+			}
+		})(i)
 		headerRow.appendChild(th);
 	}
-	
 
 	var tBody = document.createElement('tbody');
 	tblData.appendChild(tBody);
@@ -118,19 +127,31 @@ function drawTable(data, heads) {
 		var tr = document.createElement('tr');
 		var td = document.createElement('td');
 		td.innerHTML = i;
+		td.setAttribute("class", "text-end");
 		tr.appendChild(td);
 		
-		// var j = 1;
 		for (var text of row) {
 			var td = document.createElement('td');
 			// td.appendChild(document.createTextNode(text));
 			td.innerHTML = text;
 			//i == 1 && j == 1 ? td.setAttribute('rowSpan', '2') : null;
 			tr.appendChild(td);
-			// td.setAttribute("class", "text-end");
+			if(typeof text === 'number') {
+				td.setAttribute("class", "text-end");
+			}
 		}
 		tBody.appendChild(tr);
 	}
+}
+
+
+function sortTable(colNum) {
+	console.log('colNum:', colNum);
+	aData = aData.sort(function(a, b) {
+		return a[colNum] > b[colNum] ? 1 : -1;
+	})
+	// console.log('aData:', aData);
+	drawTable(aData, aHead);
 }
 
 
@@ -144,8 +165,7 @@ function showData() {
 		return
 	}
 
-	var head = ['NN', 'Country', 'Confirmed', 'Deaths', 'String. Actual', 'Stringency'];
-	drawTable(aData, head);
+	drawTable(aData, aHead);
 	
 }
 
