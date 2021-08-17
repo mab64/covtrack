@@ -1,6 +1,4 @@
 Flask
-nltk
-termcolor
-twython
-pymorphy2
-pymysql
+PyMySQL
+requests
+

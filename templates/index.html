@@ -1,28 +1,28 @@
 {% extends "index_layout.html" %}
 
 {% block body %}
+<div class="row">
+
+<div class="col-sm-3">
 	<form  class="form-inline" method="get">
-		<div class="form-row col-sm-12" id="update">
+		<!-- <div class="form-row col-sm-12" id="update">
 			<input type="button" id="btnUpdate" name="btnUpdate" value=" Update "
 				class="btn btn-danger" onclick="updateData(this.parentNode)" />			
-		</div>
+		</div> -->
 
 		<div class="form-row " id="periods">
             <div id="period1" class="form-group">
 				<label for="date_start">Start date: </label>
 				<input type="text" class="form-control" id="date_start" name="date_start_1" 
-					pattern="[0-9]{4}/[0-9]{2}/[0-9]{2}" 
+					pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" 
 					placeholder="yyyy-mm-dd" required />
 				<label for="date_end">End date: </label>
 				<input type="text" class="form-control" id="date_end" name="date_end_1" 
 					 pattern="[0-9]{4}/[0-9]{2}/[0-9]{2}" placeholder="yyyy-mm-dd" required />
-                
-				<input type="button" id="btnAdd" name="btnAdd" value=" + "
-                    class="btn btn-default" onclick="appendPeriod(this.parentNode)" />
 			</div>
 		</div>
 <!-- -->
-		<div class="form-row col-sm-12">
+		<div class="form-row">
 			<label for="op_type1" class="btn radio-inline">
 				<input type="radio" name="op_type" id="op_type1" value="0" checked>
 				Analyze </label>
@@ -44,12 +44,19 @@
 		<input type="button" id="btnGo" value="Go" class="btn btn-primary" />
 		<!-- <button class="btn btn-default col-sm-offset-1" type="submit">GO</button> -->
 	</form>
+</div>
 
-	<div class="container" id="divTable">
-		<!-- <p>{{ date_start }} - {{ date_end }} </p> -->
-		<h3>Data</h3>
-	</div>
-	
-	
+<!-- <div class="col-sm-1">
+	asa
+</div> -->
+
+
+<div class="col-sm-9" id="divTable">
+	<!-- <p>{{ date_start }} - {{ date_end }} </p> -->
+	<h3>Data</h3>
+</div>
+
+
+</div>
 {% endblock %}
 	

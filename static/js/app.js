@@ -1,6 +1,7 @@
 'use strict';
 
 var cnt = 1;
+var aData = [];
 
 var groupbyValue = '0';
 // var groupbyElement;
@@ -75,40 +76,58 @@ function httpRequest(url, reqType='GET', asyncProc=false) {
 }
 
 
-function drawTable(data, header) {
+function drawTable(data, heads) {
 	// Show Tracker's data in table.
 	
-	console.log('Head:', header);
+	console.log('Head:', heads);
 
 	var tblData = document.getElementById("tblData");
 	if (tblData) {
 		tblData.remove();
 	}
 	tblData = document.createElement('table');
-	tblData.setAttribute("id", "tblData");
-	tblData.setAttribute("class", "table table-striped");
 	document.getElementById('divTable').appendChild(tblData);
+	tblData.setAttribute("id", "tblData");
+	tblData.setAttribute("class", "table table-striped table-hover table-bordered");
 	
-	var tHead = document.createElement('thead');
-	tblData.appendChild(tHead);
-	var tr = document.createElement('tr');
-	tHead.appendChild(tr);
-	for (var head of header) {
-		var td = document.createElement('td');
-		td.appendChild(document.createTextNode(head));
-		tr.appendChild(td);
-	}
+	// var tHead = document.createElement('thead');
+	// tblData.appendChild(tHead);
+ 	// var tr = document.createElement('tr');
+	// tHead.appendChild(tr);
+	// for (var head of heads) {
+	// 	var td = document.createElement('td');
+	// 	td.appendChild(document.createTextNode(head));
+	// 	tr.appendChild(td);
+	// }
 		
+	var tHead = tblData.createTHead();
+    var headerRow = tHead.insertRow(0);
+	for (var head of heads) {
+		var th = document.createElement("th");
+		th.innerHTML = head;
+		headerRow.appendChild(th);
+	}
+	
+
 	var tBody = document.createElement('tbody');
 	tblData.appendChild(tBody);
-	for (var line of data) {
-		//console.log('Line:', line);
+	var i = 0;
+	for (var row of data) {
+		//console.log('row:', row);
+		i += 1;
 		var tr = document.createElement('tr');
-		for (var value of line) {
+		var td = document.createElement('td');
+		td.innerHTML = i;
+		tr.appendChild(td);
+		
+		// var j = 1;
+		for (var text of row) {
 			var td = document.createElement('td');
-			td.appendChild(document.createTextNode(value));
+			// td.appendChild(document.createTextNode(text));
+			td.innerHTML = text;
 			//i == 1 && j == 1 ? td.setAttribute('rowSpan', '2') : null;
 			tr.appendChild(td);
+			// td.setAttribute("class", "text-end");
 		}
 		tBody.appendChild(tr);
 	}
@@ -118,10 +137,15 @@ function drawTable(data, header) {
 function showData() {
 	// Show data in browser.
 	
-	var data = getData();
-	//console.log('data:', data);
-	var head = ['Country', 'Confirmed', 'Deaths', 'Stringency Actual', 'Stringency'];
-	drawTable(data, head);
+	//var data = getData();
+	aData = getData();
+	console.log('aData:', aData);
+	if (!aData) {
+		return
+	}
+
+	var head = ['NN', 'Country', 'Confirmed', 'Deaths', 'String. Actual', 'Stringency'];
+	drawTable(aData, head);
 	
 }
 
@@ -138,7 +162,7 @@ function getData() {
 	var data = JSON.parse(httpRequest('getdata?' + params, 'POST'));
 	//console.log('Update result:', result);
 	if (!data) {
-		alert('Get data failed.');
+		alert('Cannot get data.');
 		return false;
 	} else {
 		return data;
@@ -160,33 +184,6 @@ function updateData() {
 	} else {
 		alert('Update failed.');
 	};
-}
-
-
-function appendPeriod(obj) {
-	// <!-- var obj = document.getElementById("period1"); -->
-	var parentObj = document.getElementById("periods");
-	var newObj = parentObj.appendChild(obj.cloneNode(true));
-	<!-- var newObj = document.createElement('div'); -->
-	cnt += 1;
-	var periodId = "period" + cnt;
-	newObj.setAttribute("id", periodId);
-	<!-- parentObj.appendChild(newObj); -->
-	<!-- newObj.getElementById("btnAdd").innerHTML = " - "; -->
-	
-	newObj.querySelector("#btnAdd").setAttribute('value', ' - ');
-	newObj.querySelector("#btnAdd").setAttribute("onclick", 
-			"removePeriod(this.parentNode); return false;");
-	newObj.querySelector("#date_start").setAttribute("name", "date_start_" + cnt);
-	newObj.querySelector("#date_end").setAttribute("name", "date_end_" + cnt);
-	
-	// console.log(newObj.id);
-	// console.log(parentObj.children.length);
-}
-
-function removePeriod(obj) {
-	obj.parentNode.removeChild(obj);
-	// cnt -= 1;
 }
 
 

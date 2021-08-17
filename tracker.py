@@ -26,12 +26,15 @@ with open(os.path.join(APP_PATH, "conf", "tracker.conf")) as conf_file:
     CONF = json.load(conf_file)
 
 # Connect to MySQL Database
-CONN = pymysql.connect(host=CONF["MYSQL_HOST"], 
-                       user=CONF["MYSQL_USER"],
-                       passwd=CONF["MYSQL_PASSWD"], 
-                       db=CONF["MYSQL_DB"])
+try:
+    CONN = pymysql.connect(host=CONF["MYSQL_HOST"], 
+                        user=CONF["MYSQL_USER"],
+                        passwd=CONF["MYSQL_PASSWD"], 
+                        db=CONF["MYSQL_DB"])
+except:
+    CONN = False
+
 #CUR = CONN.cursor(pymysql.cursors.DictCursor)
-CUR = CONN.cursor()
 
 BASE_URL = 'https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range'
 
@@ -45,6 +48,11 @@ def get_remote_data(date_start, date_end):
 def get_data(params):
     """Receive data from database, returns processed."""
     
+    if CONN:
+        cur = CONN.cursor()
+    else:
+        return False
+
     print(params, type(params))
     periods = json.loads(params['periods'])
     print(periods, type(periods))
@@ -55,11 +63,11 @@ def get_data(params):
             GROUP BY country_code ORDER BY SUM(stringency)"""
         
         query_vals = (period['date_start'], period['date_end'])
-        CUR.execute(query, query_vals)
+        cur.execute(query, query_vals)
         data = []
-        for row in CUR.fetchall():
+        for row in cur.fetchall():
             data.append((row[0], int(row[1]), int(row[2]), int(row[3]), int(row[4])))
-        print(data)
+        #print(data)
         return data
 
 
@@ -83,6 +91,12 @@ def update_data(params):
 
 def set_data(data):
     """Write data to database."""
+
+    if CONN:
+        cur = CONN.cursor()
+    else:
+        return False
+
     if not data:
         return    
         
@@ -93,8 +107,8 @@ def set_data(data):
     #query_exec(query, query_vals, True)
     
     #try:
-    #    CUR.executemany(query, query_vals)
-    #    #CUR.execute(query, query_vals)
+    #    cur.executemany(query, query_vals)
+    #    #cur.execute(query, query_vals)
     #except pymysql.Error as err:
     #    print("A query exec error occurred:", err.args)
     #    CONN.rollback()
@@ -118,25 +132,25 @@ def set_data(data):
                       data['data'][date][country]['deaths'],
                       data['data'][date][country]['stringency_actual'],
                       data['data'][date][country]['stringency']))
-    result = query_exec(query, query_vals, True)
+    result = query_exec(cur, query, query_vals, True)
     return result
     
 
-def query_exec(query, query_vals, is_many=False):
+def query_exec(cursor, query, query_vals, is_many=False):
     """Runs sql query. Commit if success, rollback otherwise."""
     try:
         if is_many:
-            CUR.executemany(query, query_vals)
+            cursor.executemany(query, query_vals)
         else:
-            CUR.execute(query, query_vals)
+            cursor.execute(query, query_vals)
     except pymysql.Error as err:
         print("A query exec error occurred:", err.args)
         CONN.rollback()
         return False
     else:
         CONN.commit()
-        #print('CONN:', CUR.rowcount)
-        return CUR.rowcount
+        #print('CONN:', cursor.rowcount)
+        return cursor.rowcount
 
 
 def main():
