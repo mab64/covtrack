@@ -16,7 +16,7 @@ services:
       MYSQL_PASSWORD: $MYSQL_PASSWORD
 
   app:
-    image: covtrack
+    image: covtrack_app
     container_name: covtrack_app
     hostname: covtrack_app
     build: 
@@ -26,6 +26,7 @@ services:
     restart: always
     environment: 
       MYSQL_HOST: covtrack_db
+      MYSQL_PORT: 3306
       MYSQL_DATABASE: $MYSQL_DATABASE
       MYSQL_USER: $MYSQL_USER
       MYSQL_PASSWORD: $MYSQL_PASSWORD

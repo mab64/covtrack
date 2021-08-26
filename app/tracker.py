@@ -37,9 +37,9 @@ def check_db():
             );
             '''
     result = cur.execute(query)
-    query  = '''EXPLAIN data;'''
-    result = cur.execute(query)
-    print('result:', result)
+    # query  = '''EXPLAIN data;'''
+    # result = cur.execute(query)
+    # print('result:', result)
 
 
 def get_data(params):
@@ -175,18 +175,30 @@ def main():
     
 APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
+# Load database connection parameters from config file.
 with open(os.path.join(APP_PATH, "conf", "tracker.conf")) as conf_file:
     CONF = json.load(conf_file)
+# Redefine connection parameters from environment if exists.
+if os.getenv('MYSQL_HOST'):
+    CONF["MYSQL_HOST"] = os.getenv('MYSQL_HOST')
+if os.getenv('MYSQL_PORT'):
+    CONF["MYSQL_PORT"] = int(os.getenv('MYSQL_PORT'))
+if os.getenv('MYSQL_USER'):
+    CONF["MYSQL_USER"] = os.getenv('MYSQL_USER')
+if os.getenv('MYSQL_PASSWORD'):
+    CONF["MYSQL_PASSWORD"] = os.getenv('MYSQL_PASSWORD')
+if os.getenv('MYSQL_DATABASE'):
+    CONF["MYSQL_DATABASE"] = os.getenv('MYSQL_DATABASE')
+
 print('CONF:', CONF)
 
-# Connect to MySQL Database
+# Connect to Database
 try:
     CONN = pymysql.connect(host=CONF["MYSQL_HOST"],
                         port=CONF["MYSQL_PORT"],
                         user=CONF["MYSQL_USER"],
-                        password=CONF["MYSQL_PASSWD"], 
-                        database=CONF["MYSQL_DB"])
-
+                        password=CONF["MYSQL_PASSWORD"], 
+                        database=CONF["MYSQL_DATABASE"])
 except:
     print('Cannot connect to database!')
     CONN = False
