@@ -2,6 +2,8 @@ version: '3'
 services:
   db:
     image: mariadb
+    container_name: covtrack_db
+    hostname: covtrack_db
     volumes:
       - "/var/mariadb_covtrack/:/var/lib/mysql"
     ports:
@@ -15,10 +17,17 @@ services:
 
   app:
     image: covtrack
+    container_name: covtrack_app
+    hostname: covtrack_app
     build: 
       context: .
     ports: 
       - 5001:5000
     restart: always
+    environment: 
+      MYSQL_HOST: covtrack_db
+      MYSQL_DATABASE: $MYSQL_DATABASE
+      MYSQL_USER: $MYSQL_USER
+      MYSQL_PASSWORD: $MYSQL_PASSWORD
     depends_on: 
       - db
