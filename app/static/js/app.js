@@ -75,21 +75,12 @@ function drawTable(data, heads) {
 	if (tblData) {
 		tblData.remove();
 	}
+
 	tblData = document.createElement('table');
 	document.getElementById('divTable').appendChild(tblData);
 	tblData.setAttribute("id", "tblData");
 	tblData.setAttribute("class", "table table-striped table-hover table-bordered ");
 	
-	// var tHead = document.createElement('thead');
-	// tblData.appendChild(tHead);
- 	// var tr = document.createElement('tr');
-	// tHead.appendChild(tr);
-	// for (var head of heads) {
-	// 	var td = document.createElement('td');
-	// 	td.appendChild(document.createTextNode(head));
-	// 	tr.appendChild(td);
-	// }
-		
 	var tHead = tblData.createTHead();
     var headerRow = tHead.insertRow(0);
 	var th = document.createElement("th");
@@ -172,7 +163,7 @@ function getData() {
 	console.log('params:', params);
 
 	var result = JSON.parse(httpRequest('getdata?' + params, 'POST'));
-	//console.log('Update result:', result);
+	console.log('result:', result);
 	if (!result) {
 		alert('Cannot get data.');
 		return false;

@@ -1,0 +1,7 @@
+{
+    "MYSQL_HOST": "",
+    "MYSQL_PORT": 3306,
+    "MYSQL_DB": "covtrack",
+    "MYSQL_USER": "covtrack",
+    "MYSQL_PASSWD": ""
+}
