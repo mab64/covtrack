@@ -1,3 +1,4 @@
+
 import os
 import sys
 import json
@@ -44,6 +45,7 @@ def update():
 @app.route("/getdata", methods=['POST', 'GET'])
 def getdata():
     """Generate table output data."""
+    
     #print('Params:', request.args)
     # request parameters.
     params = request.args.to_dict()
@@ -76,5 +78,5 @@ def get_periods(args, periods):
 
     
 if __name__ == "__main__":
-    app.debug = True
+    # app.debug = True
     app.run()

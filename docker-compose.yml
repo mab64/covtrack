@@ -1,0 +1,23 @@
+version: '3' 
+services:
+  db:
+    image: mariadb
+    volumes:
+      - "/var/mariadb_covtrack/:/var/lib/mysql"
+    ports:
+      - "3307:3306"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+      MYSQL_DATABASE: $MYSQL_DATABASE
+      MYSQL_USER: $MYSQL_USER
+      MYSQL_PASSWORD: $MYSQL_PASSWORD
+
+
+  app:
+    image: covtrack
+    ports: 
+      - 5001:5000
+    restart: always
+    depends_on: 
+      - db

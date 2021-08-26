@@ -2,13 +2,8 @@
 
 var cnt = 1;
 var aData = [];
-var aHead = ['Country', 'Confirmed', 'Deaths', 'String. Actual', 'Stringency'];
+var aHead = [];
 
-
-var groupbyValue = '0';
-// var groupbyElement;
-
-var chartData;
 
 window.onload = function() {
 	// Setup the GO button click handler.
@@ -19,14 +14,8 @@ window.onload = function() {
 			updateData();
 		}
 	}
-	// 
-	var groupbyElement = document.getElementById('group_by');
-	groupbyElement.addEventListener('change', function() {
-		groupbyValue = groupbyElement.selectedIndex;
-		// console.log(groupbyValue);
-	})
-
 }
+
 
 function sendData(route) {
 	var params = '';
@@ -56,6 +45,7 @@ function sendData(route) {
 	xhr.send();
 }
 
+
 function httpRequest(url, reqType='GET', asyncProc=false) {
 	//var req = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
 	var req = new XMLHttpRequest();
@@ -81,8 +71,6 @@ function httpRequest(url, reqType='GET', asyncProc=false) {
 function drawTable(data, heads) {
 	// Show Tracker's data in table.
 	
-	console.log('Head:', heads);
-
 	var tblData = document.getElementById("tblData");
 	if (tblData) {
 		tblData.remove();
@@ -107,14 +95,17 @@ function drawTable(data, heads) {
 	var th = document.createElement("th");
 	th.innerHTML = "No";
 	headerRow.appendChild(th);
-	for (var i = 0; i < heads.length; i++) {
+	for (let i = 0; i < heads.length; i++) {
 		th = document.createElement("th");
 		th.innerHTML = heads[i];
-		(function(index) {
-			th.onclick = function() {
-				sortTable(index);
-			}
-		})(i)
+		// (function(index) {
+		// 	th.onclick = function() {
+		// 		sortTable(index);
+		// 	}
+		// })(i)
+		th.onclick = function() {
+			sortTable(i);
+		}
 		headerRow.appendChild(th);
 	}
 
@@ -146,11 +137,10 @@ function drawTable(data, heads) {
 
 
 function sortTable(colNum) {
-	console.log('colNum:', colNum);
+	// console.log('colNum:', colNum);
 	aData = aData.sort(function(a, b) {
 		return a[colNum] > b[colNum] ? 1 : -1;
 	})
-	// console.log('aData:', aData);
 	drawTable(aData, aHead);
 }
 
@@ -159,7 +149,9 @@ function showData() {
 	// Show data in browser.
 	
 	//var data = getData();
-	aData = getData();
+	var result = getData();
+	aHead = result[0];
+	aData = result[1];
 	console.log('aData:', aData);
 	if (!aData) {
 		return
@@ -179,15 +171,16 @@ function getData() {
 	}
 	console.log('params:', params);
 
-	var data = JSON.parse(httpRequest('getdata?' + params, 'POST'));
+	var result = JSON.parse(httpRequest('getdata?' + params, 'POST'));
 	//console.log('Update result:', result);
-	if (!data) {
+	if (!result) {
 		alert('Cannot get data.');
 		return false;
 	} else {
-		return data;
+		return result;
 	}
 }
+
 
 function updateData() {
 	//params += '&qty_time=';
