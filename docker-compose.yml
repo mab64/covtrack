@@ -16,9 +16,9 @@ services:
       MYSQL_PASSWORD: $MYSQL_PASSWORD
 
   app:
-    image: covtrack_app
-    container_name: covtrack_app
-    hostname: covtrack_app
+    image: mual/covtrack
+    container_name: covtrack
+    hostname: covtrack
     build: 
       context: .
     ports: 
