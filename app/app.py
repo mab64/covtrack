@@ -28,55 +28,33 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    """Generate main page."""
+    """Generates main page."""
+
     return render_template("index.html")
 
 
 @app.route('/update', methods=['POST', 'GET'])
 def update():
-    """Update database from COVID tracker site."""
+    """Updates database from COVID tracker site."""
+    
     #print('Params:', request.args)
-    params = request.args.to_dict()
-    result = tracker.update_data(params)
-    print('result:', result)
+    # params = request.args.to_dict()
+    result = tracker.update_data(json.loads(request.args.get('periods')))
+    # print('result:', result)
     return json.dumps(result)
     
     
 @app.route("/getdata", methods=['POST', 'GET'])
 def getdata():
-    """Generate table output data."""
+    """Gets and returns data from database."""
     
-    #print('Params:', request.args)
-    # request parameters.
-    params = request.args.to_dict()
-    data = tracker.get_data(params)
+    # print('Params:', request.args)
+    ## request parameters.
+    # params = request.args.to_dict()
+    data = tracker.get_data(json.loads(request.args.get('periods')))
     return json.dumps(data)
 
 
-@app.route("/chart")
-def chart():
-    """ Return chart's data."""
-    
-    ## request parameters.
-    params = request.args.to_dict()
-    ## generate chart
-    chart = mixreport.get_chart(params)
-    # print('Chart: ', chart)
-    # print('JSON: ', json.dumps(chart))
-
-    return json.dumps(chart)
-
-
-def get_periods(args, periods):
-    """Gets periods from http request."""
-    for arg, value in args.items():
-        if 'date_start_' in arg:
-            date_end_name = 'date_end_' + arg[arg.rfind('_') + 1:]
-            periods.append((value, args[date_end_name]))
-    # print('periods: ', periods)
-    return 
-
-    
 if __name__ == "__main__":
     # app.debug = True
     app.run()
