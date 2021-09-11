@@ -16,3 +16,8 @@ __pycache__
 *_.*
 temp/
 work/
+#
+terraform.tfstate
+terraform.tfstate.backup
+terraform.tfvars
+

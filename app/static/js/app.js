@@ -17,127 +17,8 @@ window.onload = function() {
 }
 
 
-function sendData(route) {
-	var params = '';
-
-	var periodsObj = document.getElementById("periods").children;
-	for (let i = 0; i < periodsObj.length; i++) {
-		// console.log('Obj: ', periodsObj[i]);
-		params += '&date_start_' + (i+1) + '=' + 
-					periodsObj[i].querySelector('#date_start').value;
-		params += '&date_end_' + (i+1) + '=' + 
-					periodsObj[i].querySelector('#date_end').value;
-		
-	}
-	//console.log(params);
-	var xhr = new XMLHttpRequest();
-	xhr.open('GET', route + '?' + params);
-	xhr.onload = function() {
-		if (xhr.status === 200) {
-			var result = JSON.parse(xhr.responseText);
-			console.log('sendData result:', result);
-			return result;
-		} else {
-			alert('Request failed.  Returned status: ' + xhr.status);
-			return false;
-		}
-	};
-	xhr.send();
-}
-
-
-function httpRequest(url, reqType='GET', asyncProc=false) {
-	//var req = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
-	var req = new XMLHttpRequest();
-	if (asyncProc) { 
-		req.onreadystatechange = function() { 
-		  if (this.readyState == 4) {
-		    asyncProc(this);
-		  } 
-		}
-	} else { 
-	  //req.timeout = 4000;  // Reduce default 2mn-like timeout to 4 s if synchronous
-	}
-	req.open(reqType, url, asyncProc);
-	req.send();
-	if (req.status === 200 ) {
-		return req.response;
-	} else {
-		return false;
-	}
-}
-
-
-function drawTable(data, heads) {
-	// Show Tracker's data in table.
-	
-	var tblData = document.getElementById("tblData");
-	if (tblData) {
-		tblData.remove();
-	}
-
-	tblData = document.createElement('table');
-	document.getElementById('divTable').appendChild(tblData);
-	tblData.setAttribute("id", "tblData");
-	tblData.setAttribute("class", "table table-striped table-hover table-bordered ");
-	
-	var tHead = tblData.createTHead();
-    var headerRow = tHead.insertRow(0);
-	var th = document.createElement("th");
-	th.innerHTML = "No";
-	headerRow.appendChild(th);
-	for (let i = 0; i < heads.length; i++) {
-		th = document.createElement("th");
-		th.innerHTML = heads[i];
-		// (function(index) {
-		// 	th.onclick = function() {
-		// 		sortTable(index);
-		// 	}
-		// })(i)
-		th.onclick = function() {
-			sortTable(i);
-		}
-		headerRow.appendChild(th);
-	}
-
-	var tBody = document.createElement('tbody');
-	tblData.appendChild(tBody);
-	var i = 0;
-	for (var row of data) {
-		//console.log('row:', row);
-		i += 1;
-		var tr = document.createElement('tr');
-		var td = document.createElement('td');
-		td.innerHTML = i;
-		td.setAttribute("class", "text-end");
-		tr.appendChild(td);
-		
-		for (var text of row) {
-			var td = document.createElement('td');
-			// td.appendChild(document.createTextNode(text));
-			td.innerHTML = text;
-			//i == 1 && j == 1 ? td.setAttribute('rowSpan', '2') : null;
-			tr.appendChild(td);
-			if(typeof text === 'number') {
-				td.setAttribute("class", "text-end");
-			}
-		}
-		tBody.appendChild(tr);
-	}
-}
-
-
-function sortTable(colNum) {
-	// console.log('colNum:', colNum);
-	aData = aData.sort(function(a, b) {
-		return a[colNum] > b[colNum] ? 1 : -1;
-	})
-	drawTable(aData, aHead);
-}
-
-
 function showData() {
-	// Show data in browser.
+	/* Show data in browser. */
 	
 	//var data = getData();
 	var result = getData();
@@ -149,12 +30,11 @@ function showData() {
 	}
 
 	drawTable(aData, aHead);
-	
 }
 
 
 function getData() {
-	// Get Tracker's data from server.
+	/* Get Tracker's data from server. */
 	
 	var params = getRequestParams(true);
 	if (!params) {
@@ -173,13 +53,83 @@ function getData() {
 }
 
 
+function drawTable(data, heads) {
+	// Show Tracker's data as a table.
+	
+	// Remove table if exists
+	var tblData = document.getElementById("tblData");
+	if (tblData) {
+		tblData.remove();
+	}
+
+	// Create table
+	tblData = document.createElement('table');
+	document.getElementById('divTable').appendChild(tblData);
+	tblData.setAttribute("id", "tblData");
+	tblData.setAttribute("class", "table table-striped table-hover table-bordered ");
+	// Create table header
+	var tHead = tblData.createTHead();
+    var headerRow = tHead.insertRow(0);
+	var th = document.createElement("th");
+	th.innerHTML = "No";
+	headerRow.appendChild(th);
+	for (let i = 0; i < heads.length; i++) {
+		th = document.createElement("th");
+		th.innerHTML = heads[i];
+		th.onclick = function() {
+			sortTable(i);
+		}
+		headerRow.appendChild(th);
+	}
+	// Create table body
+	var tBody = document.createElement('tbody');
+	tblData.appendChild(tBody);
+	// Show data in table
+	var i = 0;
+	for (var row of data) {
+		//console.log('row:', row);
+		i += 1;
+		var tr = document.createElement('tr');
+		var td = document.createElement('td');
+		td.innerHTML = i;
+		td.setAttribute("class", "text-end");
+		tr.appendChild(td);
+		
+		for (var text of row) {
+			var td = document.createElement('td');
+			td.innerHTML = text;
+			tr.appendChild(td);
+			if(typeof text === 'number') {
+				td.setAttribute("class", "text-end");
+			}
+		}
+		tBody.appendChild(tr);
+	}
+}
+
+
+function sortTable(colNum) {
+	/* Sort table content by column. */
+
+	// console.log('colNum:', colNum);
+	// Sort table data
+	aData = aData.sort(function(a, b) {
+		return a[colNum] > b[colNum] ? 1 : -1;
+	})
+	drawTable(aData, aHead);
+}
+
+
 function updateData() {
-	//params += '&qty_time=';
+	/*
+	Sent parameters for updating data in database and display result.
+	*/
+
 	var params = getRequestParams(true);
 	if (!params) {
 		return false;
 	}
-	console.log('params:', params);
+	// console.log('params:', params);
 
 	var result = JSON.parse(httpRequest('update?' + params, 'POST'));
 	//console.log('Update result:', result);
@@ -192,27 +142,20 @@ function updateData() {
 
 
 function getRequestParams(check) {
-	//
-	// Returns all parameters for http request.
-	//
+	/*
+	Generates and returns parameters for http request.
+	*/
+
 	var params = {};
-	// params.screenName = document.getElementById("screen_name").value;
 	var periodsObj = document.getElementById("periods").children;
 	var periods = []
 	var periodIsEmpty = false;
 	for (let i = 0; i < periodsObj.length; i++) {
-		// console.log('Obj: ', periodsObj[i]);
 		if (!periodsObj[i].querySelector('#date_start').value ||
 			!periodsObj[i].querySelector('#date_end').value) {
 			periodIsEmpty = true;
 			break;
 		};
-
-		//arams += 'date_start_' + (i+1) + '=' + 
-		//		periodsObj[i].querySelector('#date_start').value + '&';
-		//params += 'date_end_' + (i+1) + '=' + 
-		//		periodsObj[i].querySelector('#date_end').value + '&';
-		
 		periods.push({
 			date_start: periodsObj[i].querySelector('#date_start').value,
 			date_end: periodsObj[i].querySelector('#date_end').value

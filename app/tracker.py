@@ -2,18 +2,6 @@
 
 """COVID Tracker module"""
 
-'''
-CREATE TABLE IF NOT EXISTS data (
-    date_value DATE, 
-    country_code CHAR(3),
-    confirmed INT, 
-    deaths INT , 
-    stringency_actual FLOAT(5, 2), 
-    stringency FLOAT(5, 2),
-    PRIMARY KEY (country_code, date_value)
-)
-'''
-
 import json
 import os
 import pymysql

@@ -1,11 +1,19 @@
 provider "aws" {
   #region = "us-east-1"
   region = var.aws_region
+  default_tags {
+    tags = var.common_tags
+  } 
 }
 
 resource "aws_vpc" "covtrack_vpc" {
   cidr_block           = "10.11.0.0/16"
   enable_dns_hostnames = true
+  tags = {
+    Name = "covtrack_vpc"
+    # Owner = var.Owner
+  }
+
 }
 
 resource "aws_internet_gateway" "covtrack_gw" {
@@ -21,7 +29,7 @@ resource "aws_route" "covtrack_r" {
   # depends_on                = [aws_route_table.testing]
 }
 
-resource "aws_subnet" "covtrack_subnet" {
+resource "aws_subnet" "covtrack_subnet0" {
   vpc_id            = aws_vpc.covtrack_vpc.id
   cidr_block        = "10.11.0.0/24"
   availability_zone = "eu-central-1a"
@@ -55,7 +63,7 @@ resource "aws_subnet" "covtrack_subnet2" {
 }
 
 resource "aws_network_interface" "covtrack_ip" {
-  subnet_id   = aws_subnet.covtrack_subnet.id
+  subnet_id   = aws_subnet.covtrack_subnet0.id
   private_ips = ["10.11.0.10"]
   security_groups = [aws_security_group.covtrack_sg.id]
 
@@ -64,31 +72,12 @@ resource "aws_network_interface" "covtrack_ip" {
   }
 }
 
-resource "aws_instance" "ec2_debian_10" {
-  ami = "ami-0245697ee3e07e755"
-  instance_type = "t2.micro"
-
-  tags = {
-    Name = "ec2_covtrack"
-    Project = "Covid Tracker"
-  }
-
-  key_name = aws_key_pair.covtrack_key.id #"rhel8"
-  # security_groups = ["covtrack"]
-  # vpc_security_group_ids = [aws_security_group.covtrack_sg.id]
-
-  network_interface {
-    network_interface_id = aws_network_interface.covtrack_ip.id
-    device_index         = 0
-  }
-
-}
 
 resource "aws_key_pair" "covtrack_key" {
   key_name   = "covtrack_key"
-  # public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD3F6tyPEFEzV0LX3X8BsXdMsQz1x2cEikKDEY0aIj41qgxMCP/iteneqXSIFZBp5vizPvaoIR3Um9xK7PGoW8giupGn+EPuxIA4cDM4vzOqOkiMPhz5XK0whEjkVzTo4+S0puvDZuwIsdiW9mxhJc7tgBNL0cYlWSYVkz4G/fslNfRPW5mYAM49f4fhtxPb5ok4Q2Lg9dPKVHO/Bgeu5woMc7RY0p1ej6D4CKFE6lymSDJpW0YHX/wqE9+cfEauh7xZcG0q9t2ta6F6fmX0agvpFyZo8aFbXeUBr7osSCJNgvavWbM/06niWrOvYX2xwWdhXmXSrbX8ZbabVohBK41 email@example.com"
   public_key = file("~/.ssh/ansible_key.pub")
 }
+
 
 resource "aws_security_group" "covtrack_sg" {
   name        = "covtrack_sg"
@@ -147,12 +136,46 @@ resource "aws_security_group" "covtrack_sg" {
 
 }
 
+
+resource "aws_instance" "covtrack_ec2" {
+  ami = var.ec2_ami
+  instance_type = var.ec2_instance_type
+
+  tags = {
+    Name = "ec2_covtrack"
+    Project = "Covid Tracker"
+    # Owner = var.Owner
+  }
+
+  key_name = aws_key_pair.covtrack_key.id #"rhel8"
+  # security_groups = ["covtrack"]
+  # vpc_security_group_ids = [aws_security_group.covtrack_sg.id]
+
+  network_interface {
+    network_interface_id = aws_network_interface.covtrack_ip.id
+    device_index         = 0
+  }
+
+  user_data = <<-EOF
+    #!/bin/bash
+    set -ex
+    sudo apt update && sudo apt install -y docker docker.io docker-compose
+    sudo service docker start
+    # sudo usermod -a -G docker ec2-user
+    # sudo curl -L https://github.com/docker/compose/releases/download/1.25.4/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+    # sudo chmod +x /usr/local/bin/docker-compose
+  EOF
+
+  depends_on = [aws_db_instance.covtrack_db]
+}
+
+
 resource "aws_db_instance" "covtrack_db" {
   allocated_storage    = 5
   engine               = "MariaDB"
   engine_version       = "10.4"
   identifier           = "covtrack-db"
-  instance_class       = "db.t2.micro"
+  instance_class       = var.db_instance_class
   name                 = "covtrack_db"
   username             = "covtrack_user"
   password             = var.db_password
@@ -160,12 +183,11 @@ resource "aws_db_instance" "covtrack_db" {
   skip_final_snapshot  = true
   db_subnet_group_name = aws_db_subnet_group.covtrack_subnet_gr.name
   vpc_security_group_ids = [aws_security_group.covtrack_sg.id]
-   
 }
 
 resource "aws_db_subnet_group" "covtrack_subnet_gr" {
   name       = "covtrack_subnet_gr"
-  subnet_ids = [aws_subnet.covtrack_subnet.id, 
+  subnet_ids = [aws_subnet.covtrack_subnet0.id, 
                 aws_subnet.covtrack_subnet1.id, 
                 aws_subnet.covtrack_subnet2.id]
 
@@ -174,12 +196,7 @@ resource "aws_db_subnet_group" "covtrack_subnet_gr" {
   }
 }
 
-## Variables
-variable "aws_region" {
-  type = string
-  default = "eu-central-1"
-}
 
-variable "db_password" {
-  type = string
+output "ec2_ip" {
+  value = aws_instance.covtrack_ec2.public_ip
 }
