@@ -170,3 +170,25 @@ function getRequestParams(check) {
 	return params;
 }
 
+
+function httpRequest(url, reqType='GET', asyncProc=false) {
+	//var req = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+	var req = new XMLHttpRequest();
+	if (asyncProc) { 
+		req.onreadystatechange = function() { 
+		  if (this.readyState == 4) {
+		    asyncProc(this);
+		  } 
+		}
+	} else { 
+	  //req.timeout = 4000;  // Reduce default 2mn-like timeout to 4 s if synchronous
+	}
+	req.open(reqType, url, asyncProc);
+	req.send();
+	if (req.status === 200 ) {
+		return req.response;
+	} else {
+		return false;
+	}
+}
+
