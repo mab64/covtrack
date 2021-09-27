@@ -29,24 +29,6 @@ if os.getenv('MYSQL_DATABASE'):
 
 # print('CONF:', CONF)
 
-# Connect to Database
-try:
-    CONN = pymysql.connect(host=CONF["MYSQL_HOST"],
-                        port=CONF["MYSQL_PORT"],
-                        user=CONF["MYSQL_USER"],
-                        password=CONF["MYSQL_PASSWORD"], 
-                        database=CONF["MYSQL_DATABASE"])
-except:
-    print('Cannot connect to database!')
-    CONN = False
-else:
-    print('Connected to database')
-    check_db()
-
-#CUR = CONN.cursor(pymysql.cursors.DictCursor)
-
-BASE_URL = 'https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range'
-
 
 def check_db():
     """Connects to database and checks structure."""
@@ -194,6 +176,24 @@ def query_exec(cursor, query, query_vals, is_many=False):
         CONN.commit()
         #print('CONN:', cursor.rowcount)
         return cursor.rowcount
+
+# Connect to Database
+try:
+    CONN = pymysql.connect(host=CONF["MYSQL_HOST"],
+                        port=CONF["MYSQL_PORT"],
+                        user=CONF["MYSQL_USER"],
+                        password=CONF["MYSQL_PASSWORD"], 
+                        database=CONF["MYSQL_DATABASE"])
+except:
+    print('Cannot connect to database!')
+    CONN = False
+else:
+    print('Connected to database')
+    check_db()
+
+#CUR = CONN.cursor(pymysql.cursors.DictCursor)
+
+BASE_URL = 'https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range'
 
 
 def main():
