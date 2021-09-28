@@ -42,7 +42,7 @@ function getData() {
 	}
 	console.log('params:', params);
 
-	var result = JSON.parse(httpRequest('getdata?' + params, 'POST'));
+	var result = JSON.parse(httpRequest('getdata?' + params)); //, 'POST'
 	console.log('result:', result);
 	if (!result) {
 		alert('Cannot get data.');
@@ -73,7 +73,8 @@ function drawTable(data, heads) {
 	var th = document.createElement("th");
 	th.innerHTML = "No";
 	headerRow.appendChild(th);
-	for (let i = 0; i < heads.length; i++) {
+	let i = 0;
+	for (i = 0; i < heads.length; i++) {
 		th = document.createElement("th");
 		th.innerHTML = heads[i];
 		th.onclick = function() {
@@ -85,7 +86,7 @@ function drawTable(data, heads) {
 	var tBody = document.createElement('tbody');
 	tblData.appendChild(tBody);
 	// Show data in table
-	var i = 0;
+	i = 0;
 	for (var row of data) {
 		//console.log('row:', row);
 		i += 1;
@@ -131,13 +132,13 @@ function updateData() {
 	}
 	// console.log('params:', params);
 
-	var result = JSON.parse(httpRequest('update?' + params, 'POST'));
+	var result = JSON.parse(httpRequest('update?' + params));  //, 'POST'
 	//console.log('Update result:', result);
 	if (result) {
 		alert('Update OK: ' + result + ' rows.');
 	} else {
 		alert('Update failed.');
-	};
+	}
 }
 
 
@@ -155,11 +156,11 @@ function getRequestParams(check) {
 			!periodsObj[i].querySelector('#date_end').value) {
 			periodIsEmpty = true;
 			break;
-		};
+		}
 		periods.push({
 			date_start: periodsObj[i].querySelector('#date_start').value,
 			date_end: periodsObj[i].querySelector('#date_end').value
-		});
+		})
 	}
 	if (periodIsEmpty) {
 		alert('The Period field values must not be empty!');

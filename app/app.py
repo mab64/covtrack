@@ -1,3 +1,5 @@
+"""app.debug = True or app.config['DEBUG'] = True
+export FLASK_DEBUG=1; flask run"""
 
 import os
 import sys
@@ -21,10 +23,6 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 print('ROOT_DIR:', ROOT_DIR)
 
 app = Flask(__name__)
-#app.debug = True
-#app.config['DEBUG'] = True
-
-# export FLASK_DEBUG=1; flask run
 
 @app.route("/")
 def index():
@@ -33,28 +31,24 @@ def index():
     return render_template("index.html")
 
 
-@app.route('/update', methods=['POST', 'GET'])
+@app.route('/update')
 def update():
     """Updates database from COVID tracker site."""
     
     #print('Params:', request.args)
-    # params = request.args.to_dict()
-    result = tracker.update_data(json.loads(request.args.get('periods')))
+    periods = json.loads(request.args.get('periods'))
+    result = tracker.update_data(periods)
     # print('result:', result)
     return json.dumps(result)
     
     
-@app.route("/getdata", methods=['POST', 'GET'])
+@app.route("/getdata")
 def getdata():
     """Gets and returns data from database."""
     
     # print('Params:', request.args)
     ## request parameters.
-    # params = request.args.to_dict()
-    data = tracker.get_data(json.loads(request.args.get('periods')))
+    periods = json.loads(request.args.get('periods'))
+    data = tracker.get_data(periods)
     return json.dumps(data)
 
-
-if __name__ == "__main__":
-    # app.debug = True
-    app.run()
