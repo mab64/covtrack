@@ -98,7 +98,6 @@ def get_remote_data(date_start, date_end):
 
     request = requests.get('/'.join((BASE_URL, date_start, date_end)))
     if request.status_code == 200:
-        print(request.content)
         data = json.loads(request.content)
         if data.get('status') == 'error':
             return False

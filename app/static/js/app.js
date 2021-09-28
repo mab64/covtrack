@@ -20,7 +20,6 @@ window.onload = function() {
 function showData() {
 	/* Show data in browser. */
 	
-	//var data = getData();
 	var result = getData();
 	aHead = result[0];
 	aData = result[1];
@@ -87,17 +86,18 @@ function drawTable(data, heads) {
 	tblData.appendChild(tBody);
 	// Show data in table
 	i = 0;
-	for (var row of data) {
+	let td, tr;
+	for (let row of data) {
 		//console.log('row:', row);
 		i += 1;
-		var tr = document.createElement('tr');
-		var td = document.createElement('td');
+		tr = document.createElement('tr');
+		td = document.createElement('td');
 		td.innerHTML = i;
 		td.setAttribute("class", "text-end");
 		tr.appendChild(td);
 		
-		for (var text of row) {
-			var td = document.createElement('td');
+		for (let text of row) {
+			td = document.createElement('td');
 			td.innerHTML = text;
 			tr.appendChild(td);
 			if(typeof text === 'number') {
@@ -130,10 +130,8 @@ function updateData() {
 	if (!params) {
 		return false;
 	}
-	// console.log('params:', params);
 
-	var result = JSON.parse(httpRequest('update?' + params));  //, 'POST'
-	//console.log('Update result:', result);
+	var result = JSON.parse(httpRequest('update?' + params));
 	if (result) {
 		alert('Update OK: ' + result + ' rows.');
 	} else {
@@ -173,7 +171,6 @@ function getRequestParams(check) {
 
 
 function httpRequest(url, reqType='GET', asyncProc=false) {
-	//var req = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
 	var req = new XMLHttpRequest();
 	if (asyncProc) { 
 		req.onreadystatechange = function() { 
