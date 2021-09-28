@@ -20,10 +20,7 @@ logger = logging.getLogger(__name__)
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 print('ROOT_DIR:', ROOT_DIR)
 
-app = Flask(__name__)
-#app.debug = True
-#app.config['DEBUG'] = True
-
+app = Flask(__name__) # app.debug = True or app.config['DEBUG'] = True
 # export FLASK_DEBUG=1; flask run
 
 @app.route("/")
@@ -33,7 +30,7 @@ def index():
     return render_template("index.html")
 
 
-@app.route('/update', methods=['POST', 'GET'])
+@app.route('/update')   # , methods=['POST', 'GET']
 def update():
     """Updates database from COVID tracker site."""
     
@@ -44,7 +41,7 @@ def update():
     return json.dumps(result)
     
     
-@app.route("/getdata", methods=['POST', 'GET'])
+@app.route("/getdata")  # , methods=['POST', 'GET']
 def getdata():
     """Gets and returns data from database."""
     
@@ -54,7 +51,3 @@ def getdata():
     data = tracker.get_data(json.loads(request.args.get('periods')))
     return json.dumps(data)
 
-
-if __name__ == "__main__":
-    # app.debug = True
-    app.run()

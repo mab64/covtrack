@@ -42,7 +42,7 @@ function getData() {
 	}
 	console.log('params:', params);
 
-	var result = JSON.parse(httpRequest('getdata?' + params, 'POST'));
+	var result = JSON.parse(httpRequest('getdata?' + params)); //, 'POST'
 	console.log('result:', result);
 	if (!result) {
 		alert('Cannot get data.');
@@ -131,7 +131,7 @@ function updateData() {
 	}
 	// console.log('params:', params);
 
-	var result = JSON.parse(httpRequest('update?' + params, 'POST'));
+	var result = JSON.parse(httpRequest('update?' + params));  //, 'POST'
 	//console.log('Update result:', result);
 	if (result) {
 		alert('Update OK: ' + result + ' rows.');
