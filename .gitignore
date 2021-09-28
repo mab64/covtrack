@@ -5,6 +5,7 @@
 !.gitignore
 !.gitlab-ci.yml
 !.dockerignore
+!.github
 __init__
 __pycache__
 *.db
