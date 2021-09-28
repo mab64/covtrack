@@ -1,0 +1,3 @@
+db_name     = "covtrack_db"
+db_user     = "covtrack_user"
+db_password = "db_password"

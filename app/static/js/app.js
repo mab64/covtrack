@@ -17,32 +17,157 @@ window.onload = function() {
 }
 
 
-function sendData(route) {
-	var params = '';
-
-	var periodsObj = document.getElementById("periods").children;
-	for (let i = 0; i < periodsObj.length; i++) {
-		// console.log('Obj: ', periodsObj[i]);
-		params += '&date_start_' + (i+1) + '=' + 
-					periodsObj[i].querySelector('#date_start').value;
-		params += '&date_end_' + (i+1) + '=' + 
-					periodsObj[i].querySelector('#date_end').value;
-		
+function showData() {
+	/* Show data in browser. */
+	
+	//var data = getData();
+	var result = getData();
+	aHead = result[0];
+	aData = result[1];
+	console.log('aData:', aData);
+	if (!aData) {
+		return
 	}
-	//console.log(params);
-	var xhr = new XMLHttpRequest();
-	xhr.open('GET', route + '?' + params);
-	xhr.onload = function() {
-		if (xhr.status === 200) {
-			var result = JSON.parse(xhr.responseText);
-			console.log('sendData result:', result);
-			return result;
-		} else {
-			alert('Request failed.  Returned status: ' + xhr.status);
-			return false;
+
+	drawTable(aData, aHead);
+}
+
+
+function getData() {
+	/* Get Tracker's data from server. */
+	
+	var params = getRequestParams(true);
+	if (!params) {
+		return false;
+	}
+	console.log('params:', params);
+
+	var result = JSON.parse(httpRequest('getdata?' + params, 'POST'));
+	console.log('result:', result);
+	if (!result) {
+		alert('Cannot get data.');
+		return false;
+	} else {
+		return result;
+	}
+}
+
+
+function drawTable(data, heads) {
+	// Show Tracker's data as a table.
+	
+	// Remove table if exists
+	var tblData = document.getElementById("tblData");
+	if (tblData) {
+		tblData.remove();
+	}
+
+	// Create table
+	tblData = document.createElement('table');
+	document.getElementById('divTable').appendChild(tblData);
+	tblData.setAttribute("id", "tblData");
+	tblData.setAttribute("class", "table table-striped table-hover table-bordered ");
+	// Create table header
+	var tHead = tblData.createTHead();
+    var headerRow = tHead.insertRow(0);
+	var th = document.createElement("th");
+	th.innerHTML = "No";
+	headerRow.appendChild(th);
+	for (let i = 0; i < heads.length; i++) {
+		th = document.createElement("th");
+		th.innerHTML = heads[i];
+		th.onclick = function() {
+			sortTable(i);
 		}
+		headerRow.appendChild(th);
+	}
+	// Create table body
+	var tBody = document.createElement('tbody');
+	tblData.appendChild(tBody);
+	// Show data in table
+	var i = 0;
+	for (var row of data) {
+		//console.log('row:', row);
+		i += 1;
+		var tr = document.createElement('tr');
+		var td = document.createElement('td');
+		td.innerHTML = i;
+		td.setAttribute("class", "text-end");
+		tr.appendChild(td);
+		
+		for (var text of row) {
+			var td = document.createElement('td');
+			td.innerHTML = text;
+			tr.appendChild(td);
+			if(typeof text === 'number') {
+				td.setAttribute("class", "text-end");
+			}
+		}
+		tBody.appendChild(tr);
+	}
+}
+
+
+function sortTable(colNum) {
+	/* Sort table content by column. */
+
+	// console.log('colNum:', colNum);
+	// Sort table data
+	aData = aData.sort(function(a, b) {
+		return a[colNum] > b[colNum] ? 1 : -1;
+	})
+	drawTable(aData, aHead);
+}
+
+
+function updateData() {
+	/*
+	Sent parameters for updating data in database and display result.
+	*/
+
+	var params = getRequestParams(true);
+	if (!params) {
+		return false;
+	}
+	// console.log('params:', params);
+
+	var result = JSON.parse(httpRequest('update?' + params, 'POST'));
+	//console.log('Update result:', result);
+	if (result) {
+		alert('Update OK: ' + result + ' rows.');
+	} else {
+		alert('Update failed.');
 	};
-	xhr.send();
+}
+
+
+function getRequestParams(check) {
+	/*
+	Generates and returns parameters for http request.
+	*/
+
+	var params = {};
+	var periodsObj = document.getElementById("periods").children;
+	var periods = []
+	var periodIsEmpty = false;
+	for (let i = 0; i < periodsObj.length; i++) {
+		if (!periodsObj[i].querySelector('#date_start').value ||
+			!periodsObj[i].querySelector('#date_end').value) {
+			periodIsEmpty = true;
+			break;
+		};
+		periods.push({
+			date_start: periodsObj[i].querySelector('#date_start').value,
+			date_end: periodsObj[i].querySelector('#date_end').value
+		});
+	}
+	if (periodIsEmpty) {
+		alert('The Period field values must not be empty!');
+		return false;
+	}
+	params = 'periods=' + JSON.stringify(periods);
+	//console.log('params:', params);
+	return params;
 }
 
 
@@ -65,165 +190,5 @@ function httpRequest(url, reqType='GET', asyncProc=false) {
 	} else {
 		return false;
 	}
-}
-
-
-function drawTable(data, heads) {
-	// Show Tracker's data in table.
-	
-	var tblData = document.getElementById("tblData");
-	if (tblData) {
-		tblData.remove();
-	}
-
-	tblData = document.createElement('table');
-	document.getElementById('divTable').appendChild(tblData);
-	tblData.setAttribute("id", "tblData");
-	tblData.setAttribute("class", "table table-striped table-hover table-bordered ");
-	
-	var tHead = tblData.createTHead();
-    var headerRow = tHead.insertRow(0);
-	var th = document.createElement("th");
-	th.innerHTML = "No";
-	headerRow.appendChild(th);
-	for (let i = 0; i < heads.length; i++) {
-		th = document.createElement("th");
-		th.innerHTML = heads[i];
-		// (function(index) {
-		// 	th.onclick = function() {
-		// 		sortTable(index);
-		// 	}
-		// })(i)
-		th.onclick = function() {
-			sortTable(i);
-		}
-		headerRow.appendChild(th);
-	}
-
-	var tBody = document.createElement('tbody');
-	tblData.appendChild(tBody);
-	var i = 0;
-	for (var row of data) {
-		//console.log('row:', row);
-		i += 1;
-		var tr = document.createElement('tr');
-		var td = document.createElement('td');
-		td.innerHTML = i;
-		td.setAttribute("class", "text-end");
-		tr.appendChild(td);
-		
-		for (var text of row) {
-			var td = document.createElement('td');
-			// td.appendChild(document.createTextNode(text));
-			td.innerHTML = text;
-			//i == 1 && j == 1 ? td.setAttribute('rowSpan', '2') : null;
-			tr.appendChild(td);
-			if(typeof text === 'number') {
-				td.setAttribute("class", "text-end");
-			}
-		}
-		tBody.appendChild(tr);
-	}
-}
-
-
-function sortTable(colNum) {
-	// console.log('colNum:', colNum);
-	aData = aData.sort(function(a, b) {
-		return a[colNum] > b[colNum] ? 1 : -1;
-	})
-	drawTable(aData, aHead);
-}
-
-
-function showData() {
-	// Show data in browser.
-	
-	//var data = getData();
-	var result = getData();
-	aHead = result[0];
-	aData = result[1];
-	console.log('aData:', aData);
-	if (!aData) {
-		return
-	}
-
-	drawTable(aData, aHead);
-	
-}
-
-
-function getData() {
-	// Get Tracker's data from server.
-	
-	var params = getRequestParams(true);
-	if (!params) {
-		return false;
-	}
-	console.log('params:', params);
-
-	var result = JSON.parse(httpRequest('getdata?' + params, 'POST'));
-	console.log('result:', result);
-	if (!result) {
-		alert('Cannot get data.');
-		return false;
-	} else {
-		return result;
-	}
-}
-
-
-function updateData() {
-	//params += '&qty_time=';
-	var params = getRequestParams(true);
-	if (!params) {
-		return false;
-	}
-	console.log('params:', params);
-
-	var result = JSON.parse(httpRequest('update?' + params, 'POST'));
-	//console.log('Update result:', result);
-	if (result) {
-		alert('Update OK: ' + result + ' rows.');
-	} else {
-		alert('Update failed.');
-	};
-}
-
-
-function getRequestParams(check) {
-	//
-	// Returns all parameters for http request.
-	//
-	var params = {};
-	// params.screenName = document.getElementById("screen_name").value;
-	var periodsObj = document.getElementById("periods").children;
-	var periods = []
-	var periodIsEmpty = false;
-	for (let i = 0; i < periodsObj.length; i++) {
-		// console.log('Obj: ', periodsObj[i]);
-		if (!periodsObj[i].querySelector('#date_start').value ||
-			!periodsObj[i].querySelector('#date_end').value) {
-			periodIsEmpty = true;
-			break;
-		};
-
-		//arams += 'date_start_' + (i+1) + '=' + 
-		//		periodsObj[i].querySelector('#date_start').value + '&';
-		//params += 'date_end_' + (i+1) + '=' + 
-		//		periodsObj[i].querySelector('#date_end').value + '&';
-		
-		periods.push({
-			date_start: periodsObj[i].querySelector('#date_start').value,
-			date_end: periodsObj[i].querySelector('#date_end').value
-		});
-	}
-	if (periodIsEmpty) {
-		alert('The Period field values must not be empty!');
-		return false;
-	}
-	params = 'periods=' + JSON.stringify(periods);
-	//console.log('params:', params);
-	return params;
 }
 

@@ -2,47 +2,56 @@
 
 """COVID Tracker module"""
 
-'''
-CREATE TABLE IF NOT EXISTS data (
-    date_value DATE, 
-    country_code CHAR(3),
-    confirmed INT, 
-    deaths INT , 
-    stringency_actual FLOAT(5, 2), 
-    stringency FLOAT(5, 2),
-    PRIMARY KEY (country_code, date_value)
-)
-'''
-
 import json
 import os
 import pymysql
 import requests
 import time
 
+APP_PATH = os.path.dirname(os.path.abspath(__file__))
+
+# Load database connection parameters from config file if exists.
+if os.path.isfile('conf/tracker.conf'):
+    with open(os.path.join(APP_PATH, "conf", "tracker.conf")) as conf_file:
+        CONF = json.load(conf_file)
+
+# Redefine connection parameters from environment if exists.
+if os.getenv('MYSQL_HOST'):
+    CONF["MYSQL_HOST"] = os.getenv('MYSQL_HOST')
+if os.getenv('MYSQL_PORT'):
+    CONF["MYSQL_PORT"] = int(os.getenv('MYSQL_PORT'))
+if os.getenv('MYSQL_USER'):
+    CONF["MYSQL_USER"] = os.getenv('MYSQL_USER')
+if os.getenv('MYSQL_PASSWORD'):
+    CONF["MYSQL_PASSWORD"] = os.getenv('MYSQL_PASSWORD')
+if os.getenv('MYSQL_DATABASE'):
+    CONF["MYSQL_DATABASE"] = os.getenv('MYSQL_DATABASE')
+
+# print('CONF:', CONF)
+
 
 def check_db():
-    """Checks database structure."""
+    """Connects to database and checks structure."""
 
     cur = CONN.cursor()
     query = '''
-            CREATE TABLE IF NOT EXISTS data (
-                date_value DATE, 
-                country_code CHAR(3),
-                confirmed INT, 
-                deaths INT , 
-                stringency_actual FLOAT(5, 2), 
-                stringency FLOAT(5, 2),
-                PRIMARY KEY (country_code, date_value)
-            );
-            '''
+        CREATE TABLE IF NOT EXISTS data (
+            date_value DATE, 
+            country_code CHAR(3),
+            confirmed INT, 
+            deaths INT , 
+            stringency_actual FLOAT(5, 2), 
+            stringency FLOAT(5, 2),
+            PRIMARY KEY (country_code, date_value)
+        );
+        '''
     result = cur.execute(query)
     # query  = '''EXPLAIN data;'''
     # result = cur.execute(query)
     # print('result:', result)
 
 
-def get_data(params):
+def get_data(periods):
     """Receive data from database, returns processed."""
     
     # time.sleep(5)
@@ -51,16 +60,13 @@ def get_data(params):
     else:
         return False
 
-    # print(params, type(params))
-    periods = json.loads(params['periods'])
-    print(periods, type(periods))
+    # print('params:', params, type(params))
+    # periods = json.loads(params['periods'])
+    # print(periods, type(periods))
     for period in periods:
-        # query = """SELECT date_value, country_code, confirmed, deaths, 
-        #     stringency_actual, stringency FROM data
-        #     WHERE (date_value BETWEEN %s AND %s)
-        #     GROUP BY country_code ORDER BY SUM(stringency)"""
-        query = """SELECT date_value, country_code, confirmed, deaths, 
-            stringency_actual, stringency FROM data
+        query = """
+            SELECT date_value, country_code, confirmed, deaths, 
+                stringency_actual, stringency FROM data
             WHERE (date_value BETWEEN %s AND %s)
             ORDER BY date_value, country_code"""
 
@@ -95,17 +101,22 @@ def get_data(params):
 def get_remote_data(date_start, date_end):
     """Receive data from COVID Tracker site."""
     
-    req = requests.get('/'.join((BASE_URL, date_start, date_end)))
-    if req.status_code == 200:
-        # print(req.content)
-        return req.content
+    request = requests.get('/'.join((BASE_URL, date_start, date_end)))
+    if request.status_code == 200:
+        print(request.content)
+        data = json.loads(request.content)
+        if data.get('status') == 'error':
+            return False
+        else:
+            return data
+    else:
+        return False
 
 
-def update_data(params):
-    """Update database from COVID Tracker site."""
+def update_data(periods):
+    """Updates database from COVID Tracker site."""
     
-    # print('Params1:', params, type(params), type(params['periods']))
-    periods = json.loads(params['periods'])
+    # periods = json.loads(params['periods'])
     # print(periods, type(periods))
     result = 0
     for period in periods:
@@ -113,7 +124,7 @@ def update_data(params):
         if not data:
             return False
         # print('Data:', data)
-        data = json.loads(data)
+        # data = json.loads(data)
         result1 = set_data(data)
         if not result1:
             return False
@@ -166,32 +177,6 @@ def query_exec(cursor, query, query_vals, is_many=False):
         #print('CONN:', cursor.rowcount)
         return cursor.rowcount
 
-
-def main():
-    with open('covid.json') as fp:
-        data = json.load(fp)
-    set_data(data)
-
-    
-APP_PATH = os.path.dirname(os.path.abspath(__file__))
-
-# Load database connection parameters from config file.
-with open(os.path.join(APP_PATH, "conf", "tracker.conf")) as conf_file:
-    CONF = json.load(conf_file)
-# Redefine connection parameters from environment if exists.
-if os.getenv('MYSQL_HOST'):
-    CONF["MYSQL_HOST"] = os.getenv('MYSQL_HOST')
-if os.getenv('MYSQL_PORT'):
-    CONF["MYSQL_PORT"] = int(os.getenv('MYSQL_PORT'))
-if os.getenv('MYSQL_USER'):
-    CONF["MYSQL_USER"] = os.getenv('MYSQL_USER')
-if os.getenv('MYSQL_PASSWORD'):
-    CONF["MYSQL_PASSWORD"] = os.getenv('MYSQL_PASSWORD')
-if os.getenv('MYSQL_DATABASE'):
-    CONF["MYSQL_DATABASE"] = os.getenv('MYSQL_DATABASE')
-
-print('CONF:', CONF)
-
 # Connect to Database
 try:
     CONN = pymysql.connect(host=CONF["MYSQL_HOST"],
@@ -210,5 +195,12 @@ else:
 
 BASE_URL = 'https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range'
 
+
+def main():
+    with open('covid.json') as fp:
+        data = json.load(fp)
+    set_data(data)
+
+    
 if __name__ == '__main__':
     main()
