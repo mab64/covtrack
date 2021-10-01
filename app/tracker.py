@@ -169,8 +169,8 @@ def query_exec(cursor, query, query_vals, is_many=False):
 
 # Connect to Database
 try:
-    CONN = pymysql.connect(host=CONF["MYSQL_HOST"],
-                        port=CONF["MYSQL_PORT"],
+    CONN = pymysql.connect(host=CONF.get("MYSQL_HOST", ''),
+                        port=CONF.get("MYSQL_PORT", 3306),
                         user=CONF["MYSQL_USER"],
                         password=CONF["MYSQL_PASSWORD"],
                         database=CONF["MYSQL_DATABASE"])
