@@ -7,6 +7,7 @@ import os
 import requests
 # import time
 import pymysql
+import logging
 
 APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -30,6 +31,18 @@ if os.getenv('MYSQL_DATABASE'):
     CONF["MYSQL_DATABASE"] = os.getenv('MYSQL_DATABASE')
 
 # print('CONF:', CONF)
+if os.getenv('FLASK_DEBUG') == '1' or os.getenv('FLASK_ENV').lower() == 'development':
+    log_level = logging.DEBUG
+else:
+    log_level = logging.INFO
+
+logging.basicConfig(
+    format='%(levelname)-8s %(asctime)s [%(filename)s:%(lineno)d] %(message)s',
+    datefmt='%Y-%m-%d:%H:%M:%S',
+    level=log_level)
+logger = logging.getLogger(__name__)
+
+logger.debug('CONF: {}'.format(CONF))
 
 
 def check_db():
@@ -175,10 +188,12 @@ try:
                         password=CONF["MYSQL_PASSWORD"],
                         database=CONF["MYSQL_DATABASE"])
 except pymysql.Error:
-    print('Cannot connect to database!')
+    # print('Cannot connect to database!')
+    logger.error('Cannot connect to database!')
     CONN = False
 else:
-    print('Connected to database')
+    # print('Connected to database')
+    logger.info('Connected to database')
     check_db()
 
 #CUR = CONN.cursor(pymysql.cursors.DictCursor)
