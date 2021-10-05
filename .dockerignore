@@ -1,2 +1,5 @@
 .*
 app/_*
+terraform/*
+k8s/*
+
