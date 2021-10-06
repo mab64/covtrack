@@ -2,7 +2,7 @@ name: Build
 on:
   push:
     branches:
-      - test # or the name of your main branch
+      - sonar_test # or the name of your main branch
 jobs:
   build:
     name: Build
