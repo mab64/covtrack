@@ -6,8 +6,7 @@ node {
     }
 
     stage('Test code') {
-        sh '. /opt/python/venv/pyany/bin/activate'
-        sh 'pylint app/*.py'
+        sh '. /opt/python/venv/pyany/bin/activate; pylint app/*.py'
     }
 
     stage('Build image') {
