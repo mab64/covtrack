@@ -1,5 +1,6 @@
 .*
 app/_*
+app/.*
+app/conf
 terraform/*
 k8s/*
-

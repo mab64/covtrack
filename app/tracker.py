@@ -8,6 +8,7 @@ import logging
 import requests
 import pymysql
 
+CONN = None
 APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
 # Load database connection parameters from config file if exists.
@@ -42,9 +43,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 logger.debug('CONF: %s', CONF)
+if not (CONF.get("MYSQL_DATABASE", "") and 
+        CONF.get("MYSQL_USER", "") and
+        CONF.get("MYSQL_PASSWORD","")):
+    logger.error('Database connection parameters invalid!')
 
-
-def check_db():
+def check_db(CONN):
     """Connects to database and checks structure."""
 
     cur = CONN.cursor()
@@ -179,23 +183,28 @@ def query_exec(cursor, query, query_vals, is_many=False):
         #print('CONN:', cursor.rowcount)
         return cursor.rowcount
 
-# Connect to Database
-try:
-    CONN = pymysql.connect(host=CONF.get("MYSQL_HOST", ''),
-                        port=CONF.get("MYSQL_PORT", 3306),
-                        user=CONF["MYSQL_USER"],
-                        password=CONF["MYSQL_PASSWORD"],
-                        database=CONF["MYSQL_DATABASE"])
-except pymysql.Error:
-    # print('Cannot connect to database!')
-    logger.error('Cannot connect to database!')
-    CONN = False
-else:
-    # print('Connected to database')
-    logger.info('Connected to database')
-    check_db()
+def db_connect():
+    """Connect to Database"""
 
-#CUR = CONN.cursor(pymysql.cursors.DictCursor)
+    global CONN
+    try:
+        CONN = pymysql.connect(host=CONF.get("MYSQL_HOST", ''),
+                            port=CONF.get("MYSQL_PORT", 3306),
+                            user=CONF["MYSQL_USER"],
+                            password=CONF["MYSQL_PASSWORD"],
+                            database=CONF["MYSQL_DATABASE"])
+    except (pymysql.Error, KeyError):
+        # print('Cannot connect to database!')
+        logger.error('Cannot connect to database!')
+        CONN = False
+    else:
+        # print('Connected to database')
+        logger.info('Connected to database')
+        check_db(CONN)
+
+    #CUR = CONN.cursor(pymysql.cursors.DictCursor)
+    return CONN
+
 
 BASE_URL = 'https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range'
 

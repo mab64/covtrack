@@ -33,7 +33,7 @@ pipeline {
 			}
 		}
 
-		stage('Run container locally') {
+		stage('Run locally') {
 			environment {
 				CNT_NAME = "covtrack"
 				ENV_FILE = credentials('covtrack_env')

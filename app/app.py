@@ -10,7 +10,7 @@ from flask.logging import create_logger
 
 import tracker
 
-__version__ = '0.1.07'
+__version__ = '0.1.08'
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -19,6 +19,8 @@ logger = create_logger(app)
 
 logger.info('Version: %s', __version__)
 logger.debug('ROOT_DIR: %s', ROOT_DIR)
+
+CONN = tracker.db_connect()
 
 @app.route("/")
 def index():
