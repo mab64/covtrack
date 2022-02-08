@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: covtracker
+  labels:
+    app: covtracker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: covtracker
+  template:
+    metadata:
+      labels:
+        app: covtracker
+    spec:
+      containers:
+      - name: main
+        image: mual/covtrack
+        ports:
+        - containerPort: 5000
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 500Mi
+        envFrom:
+        - configMapRef:
+            name: covtrack-env
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: covtracker
+spec:
+  type: LoadBalancer
+  selector:
+    app: covtracker
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 5000
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: covtracker
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: covtracker
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
