@@ -11,12 +11,11 @@ import pymysql
 CONN = None
 APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
+CONF = {}
 # Load database connection parameters from config file if exists.
 if os.path.isfile('conf/tracker.conf'):
     with open(os.path.join(APP_PATH, "conf", "tracker.conf")) as conf_file:
         CONF = json.load(conf_file)
-else:
-    CONF = {}
 
 # Redefine connection parameters from environment if exists.
 if os.getenv('MYSQL_HOST'):
@@ -30,7 +29,6 @@ if os.getenv('MYSQL_PASSWORD'):
 if os.getenv('MYSQL_DATABASE'):
     CONF["MYSQL_DATABASE"] = os.getenv('MYSQL_DATABASE')
 
-# print('CONF:', CONF)
 if os.getenv('FLASK_DEBUG') == '1' or os.getenv('FLASK_ENV').lower() == 'development':
     LOG_LEVEL = logging.DEBUG
 else:
