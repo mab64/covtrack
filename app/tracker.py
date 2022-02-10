@@ -29,7 +29,8 @@ if os.getenv('MYSQL_PASSWORD'):
 if os.getenv('MYSQL_DATABASE'):
     CONF["MYSQL_DATABASE"] = os.getenv('MYSQL_DATABASE')
 
-if os.getenv('FLASK_DEBUG') == '1' or os.getenv('FLASK_ENV').lower() == 'development':
+if (os.getenv('FLASK_DEBUG') == '1' or 
+    os.getenv('FLASK_ENV', default='').lower() == 'development'):
     LOG_LEVEL = logging.DEBUG
 else:
     LOG_LEVEL = logging.INFO

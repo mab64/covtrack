@@ -72,12 +72,13 @@ function drawTable(data, heads) {
 	var th = document.createElement("th");
 	th.innerHTML = "No";
 	headerRow.appendChild(th);
-	let i = 0;
-	for (i = 0; i < heads.length; i++) {
+	// let i = 0;
+	for (let i = 0; i < heads.length; i++) {
 		th = document.createElement("th");
 		th.innerHTML = heads[i];
 		th.onclick = function() {
 			sortTable(i);
+			// console.log('Sort header: ', i);
 		}
 		headerRow.appendChild(th);
 	}
@@ -85,7 +86,7 @@ function drawTable(data, heads) {
 	var tBody = document.createElement('tbody');
 	tblData.appendChild(tBody);
 	// Show data in table
-	i = 0;
+	let i = 0;
 	let td, tr;
 	for (let row of data) {
 		//console.log('row:', row);
@@ -110,7 +111,7 @@ function drawTable(data, heads) {
 
 
 function sortTable(colNum) {
-	/* Sort table content by column. */
+	/* Sort table content by column index. */
 
 	// console.log('colNum:', colNum);
 	// Sort table data
