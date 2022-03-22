@@ -10,7 +10,7 @@ from flask.logging import create_logger
 
 import tracker
 
-__version__ = '0.1.09'
+__version__ = '0.1.09_'
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
