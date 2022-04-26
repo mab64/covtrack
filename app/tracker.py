@@ -5,13 +5,29 @@
 import json
 import os
 import logging
+from pickle import GLOBAL
 import requests
 import pymysql
 
-CONN = None
 APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
-CONF = {}
+CONF = {}  # config parameters dictionary
+
+if os.getenv('FLASK_DEBUG') == '1' or \
+        os.getenv('FLASK_ENV', '').lower() == 'development':
+    CONF["LOG_LEVEL"] = logging.DEBUG
+else:
+    CONF["LOG_LEVEL"] = logging.INFO
+# print('CONF["LOG_LEVEL"]:', CONF["LOG_LEVEL"])
+
+logging.basicConfig(
+    format='%(levelname)-8s %(asctime)s [%(filename)s:%(lineno)d] %(message)s',
+    datefmt='%Y-%m-%d:%H:%M:%S',
+    level=CONF["LOG_LEVEL"]
+    )
+logger = logging.getLogger(__name__)
+
+# CONN = None
 # Load database connection parameters from config file if exists.
 if os.path.isfile('conf/tracker.conf'):
     with open(os.path.join(APP_PATH, "conf", "tracker.conf")) as conf_file:
@@ -29,28 +45,21 @@ if os.getenv('MYSQL_PASSWORD'):
 if os.getenv('MYSQL_DATABASE'):
     CONF["MYSQL_DATABASE"] = os.getenv('MYSQL_DATABASE')
 
-if (os.getenv('FLASK_DEBUG') == '1' or 
-    os.getenv('FLASK_ENV', default='').lower() == 'development'):
-    LOG_LEVEL = logging.DEBUG
-else:
-    LOG_LEVEL = logging.INFO
-
-logging.basicConfig(
-    format='%(levelname)-8s %(asctime)s [%(filename)s:%(lineno)d] %(message)s',
-    datefmt='%Y-%m-%d:%H:%M:%S',
-    level=LOG_LEVEL)
-logger = logging.getLogger(__name__)
-
-logger.debug('CONF: %s', CONF)
+logger.debug('CONF: %s', CONF)  # print configuration parameters
 if not (CONF.get("MYSQL_DATABASE", "") and 
         CONF.get("MYSQL_USER", "") and
         CONF.get("MYSQL_PASSWORD","")):
     logger.error('Database connection parameters invalid!')
 
-def check_db(CONN):
+def check_db():
     """Connects to database and checks structure."""
 
-    cur = CONN.cursor()
+    conn = db_connect()
+    if conn:
+        cur = conn.cursor()
+    else:
+        return False
+
     query = '''
         CREATE TABLE IF NOT EXISTS data (
             date_value DATE,
@@ -66,13 +75,15 @@ def check_db(CONN):
     # query  = '''EXPLAIN data;'''
     # result = cur.execute(query)
     # print('result:', result)
+    conn.close()
 
 
 def get_data(periods):
     """Receive data from database, returns processed."""
 
-    if CONN:
-        cur = CONN.cursor()
+    conn = db_connect()
+    if conn:
+        cur = conn.cursor()
     else:
         return False
 
@@ -107,19 +118,9 @@ def get_data(periods):
         # print(data)
         headers = ['Date', 'Country', 'Confirmed', 'Deaths', 'String. actual', 'Stringency']
         result = [headers, data]
+        conn.close()
+
         return result
-
-
-def get_remote_data(date_start, date_end):
-    """Receive data from COVID Tracker site."""
-
-    request = requests.get('/'.join((BASE_URL, date_start, date_end)))
-    if request.status_code == 200:
-        data = json.loads(request.content)
-        if data.get('status') == 'error':
-            return False
-        return data
-    return False
 
 
 def update_data(periods):
@@ -137,14 +138,27 @@ def update_data(periods):
         result += result1
     return result
 
+def get_remote_data(date_start, date_end):
+    """Receive data from COVID Tracker site."""
+
+    request = requests.get('/'.join((BASE_URL, date_start, date_end)))
+    if request.status_code == 200:
+        data = json.loads(request.content)
+        if data.get('status') == 'error':
+            return False
+        return data
+    return False
+
+
 def set_data(data):
     """Write data to database."""
 
     if not data:
         return False
 
-    if CONN:
-        cur = CONN.cursor()
+    conn = db_connect()
+    if conn:
+        cur = conn.cursor()
     else:
         return False
 
@@ -162,11 +176,11 @@ def set_data(data):
                       data['data'][date][country]['deaths'],
                       data['data'][date][country]['stringency_actual'],
                       data['data'][date][country]['stringency']))
-    result = query_exec(cur, query, query_vals, True)
+    result = query_exec(conn, cur, query, query_vals, True)
     return result
 
 
-def query_exec(cursor, query, query_vals, is_many=False):
+def query_exec(connection, cursor, query, query_vals, is_many=False):
     """Runs sql query. Commit if success, rollback otherwise."""
     try:
         if is_many:
@@ -175,36 +189,35 @@ def query_exec(cursor, query, query_vals, is_many=False):
             cursor.execute(query, query_vals)
     except pymysql.Error as err:
         print("A query exec error occurred:", err.args)
-        CONN.rollback()
+        connection.rollback()
         return False
     else:
-        CONN.commit()
+        connection.commit()
         #print('CONN:', cursor.rowcount)
         return cursor.rowcount
+
 
 def db_connect():
     """Connect to Database"""
 
-    global CONN
+    conn = False
     try:
-        CONN = pymysql.connect(host=CONF.get("MYSQL_HOST", ''),
+        conn = pymysql.connect(host=CONF.get("MYSQL_HOST", ''),
                             port=CONF.get("MYSQL_PORT", 3306),
                             user=CONF["MYSQL_USER"],
                             password=CONF["MYSQL_PASSWORD"],
                             database=CONF["MYSQL_DATABASE"])
     except (pymysql.Error, KeyError):
-        # print('Cannot connect to database!')
         logger.error('Cannot connect to database!')
-        CONN = False
     else:
-        # print('Connected to database')
         logger.info('Connected to database')
-        check_db(CONN)
+        # check_db(CONN)
 
     #CUR = CONN.cursor(pymysql.cursors.DictCursor)
-    return CONN
+    return conn
 
 
+check_db()
 BASE_URL = 'https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range'
 
 
