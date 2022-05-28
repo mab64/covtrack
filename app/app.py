@@ -3,6 +3,7 @@ export FLASK_DEBUG=1; flask run
 
 """
 
+from email.policy import default
 import os
 import json
 from flask import Flask, render_template, request   # redirect, url_for
@@ -48,4 +49,4 @@ def getdata():
     ## request parameters.
     periods = json.loads(request.args.get('periods'))
     data = tracker.get_data(periods)
-    return json.dumps(data)
+    return json.dumps(data, default=float)

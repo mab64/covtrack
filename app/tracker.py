@@ -5,13 +5,16 @@
 import json
 import os
 import logging
-from pickle import GLOBAL
+# from pickle import GLOBAL
 import requests
-import pymysql
 
 APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
 CONF = {}  # config parameters dictionary
+# Load database connection parameters from config file if exists.
+if os.path.isfile('conf/tracker.conf'):
+    with open(os.path.join(APP_PATH, "conf", "tracker.conf")) as conf_file:
+        CONF = json.load(conf_file)
 
 if os.getenv('FLASK_DEBUG') == '1' or \
         os.getenv('FLASK_ENV', '').lower() == 'development':
@@ -27,29 +30,34 @@ logging.basicConfig(
     )
 logger = logging.getLogger(__name__)
 
-# CONN = None
-# Load database connection parameters from config file if exists.
-if os.path.isfile('conf/tracker.conf'):
-    with open(os.path.join(APP_PATH, "conf", "tracker.conf")) as conf_file:
-        CONF = json.load(conf_file)
-
 # Redefine connection parameters from environment if exists.
-if os.getenv('MYSQL_HOST'):
-    CONF["MYSQL_HOST"] = os.getenv('MYSQL_HOST')
-if os.getenv('MYSQL_PORT'):
-    CONF["MYSQL_PORT"] = int(os.getenv('MYSQL_PORT'))
-if os.getenv('MYSQL_USER'):
-    CONF["MYSQL_USER"] = os.getenv('MYSQL_USER')
-if os.getenv('MYSQL_PASSWORD'):
-    CONF["MYSQL_PASSWORD"] = os.getenv('MYSQL_PASSWORD')
-if os.getenv('MYSQL_DATABASE'):
-    CONF["MYSQL_DATABASE"] = os.getenv('MYSQL_DATABASE')
+if os.getenv('DBMS'):
+    CONF["DBMS"] = os.getenv('DBMS')
+if os.getenv('DBMS_HOST'):
+    CONF["DBMS_HOST"] = os.getenv('DBMS_HOST')
+if os.getenv('DBMS_PORT'):
+    CONF["DBMS_PORT"] = int(os.getenv('DBMS_PORT'))
+if os.getenv('DBMS_USER'):
+    CONF["DBMS_USER"] = os.getenv('DBMS_USER')
+if os.getenv('DBMS_PASSWORD'):
+    CONF["DBMS_PASSWORD"] = os.getenv('DBMS_PASSWORD')
+if os.getenv('DBMS_DATABASE'):
+    CONF["DBMS_DATABASE"] = os.getenv('DBMS_DATABASE')
 
 logger.debug('CONF: %s', CONF)  # print configuration parameters
-if not (CONF.get("MYSQL_DATABASE", "") and 
-        CONF.get("MYSQL_USER", "") and
-        CONF.get("MYSQL_PASSWORD","")):
+if not (
+        CONF.get("DBMS", "") and
+        CONF.get("DBMS_DATABASE", "") and 
+        CONF.get("DBMS_USER", "") and
+        CONF.get("DBMS_PASSWORD","")
+       ):
     logger.error('Database connection parameters invalid!')
+
+if CONF["DBMS"] == "mysql":
+    import pymysql
+elif CONF["DBMS"] == "postgresql":
+    import psycopg2
+    import psycopg2.extras
 
 def check_db():
     """Connects to database and checks structure."""
@@ -62,20 +70,23 @@ def check_db():
 
     query = '''
         CREATE TABLE IF NOT EXISTS data (
-            date_value DATE,
-            country_code CHAR(3),
-            confirmed INT,
-            deaths INT ,
-            stringency_actual FLOAT(5, 2),
-            stringency FLOAT(5, 2),
+            date_value      DATE,
+            country_code    CHAR(3),
+            confirmed       INT,
+            deaths          INT ,
+            stringency_actual NUMERIC(5, 2),
+            stringency      NUMERIC(5, 2),
             PRIMARY KEY (country_code, date_value)
         );
         '''
     result = cur.execute(query)
+    logger.debug(f"Result: {result}")
     # query  = '''EXPLAIN data;'''
     # result = cur.execute(query)
     # print('result:', result)
     conn.close()
+
+    return True
 
 
 def get_data(periods):
@@ -89,8 +100,8 @@ def get_data(periods):
 
     for period in periods:
         query = """
-            SELECT date_value, country_code, confirmed, deaths,
-                stringency_actual, stringency FROM data
+            SELECT date_value, country_code, confirmed,
+                   deaths, stringency FROM data
             WHERE (date_value BETWEEN %s AND %s)
             ORDER BY date_value, country_code"""
 
@@ -114,9 +125,9 @@ def get_data(periods):
         # data.append(rows)
         for row in rows:
             # data.append((row[0], int(row[1]), int(row[2]), int(row[3]), int(row[4])))
-            data.append((str(row[0]), row[1], row[2], row[3], row[4], row[5]))
+            data.append((str(row[0]), row[1], row[2], row[3], row[4]))
         # print(data)
-        headers = ['Date', 'Country', 'Confirmed', 'Deaths', 'String. actual', 'Stringency']
+        headers = ['Date', 'Country', 'Confirmed', 'Deaths', 'Stringency']
         result = [headers, data]
         conn.close()
 
@@ -162,10 +173,19 @@ def set_data(data):
     else:
         return False
 
-    query = """REPLACE INTO data (date_value, country_code,
-         confirmed, deaths, stringency_actual, stringency)
-         VALUES (%s, %s, %s, %s, %s, %s)
-         """
+    if CONF["DBMS"] == "mysql":
+       query = """REPLACE INTO data (date_value, country_code,
+            confirmed, deaths, stringency_actual, stringency)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """
+    elif CONF["DBMS"] == "postgresql":
+       query = """INSERT INTO data (date_value, country_code,
+            confirmed, deaths, stringency_actual, stringency)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT 
+            DO NOTHING
+            """
+
     # Generate query values
     query_vals = []
     for date in data['data']:
@@ -176,48 +196,117 @@ def set_data(data):
                       data['data'][date][country]['deaths'],
                       data['data'][date][country]['stringency_actual'],
                       data['data'][date][country]['stringency']))
-    result = query_exec(conn, cur, query, query_vals, True)
+    result = query_exec(conn, cur, query, query_vals, is_many=True)
     return result
 
 
 def query_exec(connection, cursor, query, query_vals, is_many=False):
     """Runs sql query. Commit if success, rollback otherwise."""
-    try:
-        if is_many:
-            cursor.executemany(query, query_vals)
+ 
+    if CONF["DBMS"] == "mysql":
+        try:
+            if is_many:
+                cursor.executemany(query, query_vals)
+            else:
+                cursor.execute(query, query_vals)
+        except pymysql.Error as err:
+            print("A query exec error occurred:", err.args)
+            connection.rollback()
+            return False
         else:
-            cursor.execute(query, query_vals)
-    except pymysql.Error as err:
-        print("A query exec error occurred:", err.args)
-        connection.rollback()
-        return False
-    else:
-        connection.commit()
-        #print('CONN:', cursor.rowcount)
-        return cursor.rowcount
+            connection.commit()
+            #print('CONN:', cursor.rowcount)
+            return cursor.rowcount
+    elif CONF["DBMS"] == "postgresql":
+        try:
+            if is_many:
+                # logger.info(query, query_vals)
+                cursor.executemany(query, query_vals)
+                # psycopg2.extras.execute_batch(cursor, query, query_vals)
+            else:
+                cursor.execute(query, query_vals)
+        except (psycopg2.Error) as err:
+            logger.error(f'A query exec error occurred: {err}')
+            connection.rollback()
+            return False
+        else:
+            connection.commit()
+            #print('CONN:', cursor.rowcount)
+            return cursor.rowcount
+
+
 
 
 def db_connect():
     """Connect to Database"""
 
     conn = False
-    try:
-        conn = pymysql.connect(host=CONF.get("MYSQL_HOST", ''),
-                            port=CONF.get("MYSQL_PORT", 3306),
-                            user=CONF["MYSQL_USER"],
-                            password=CONF["MYSQL_PASSWORD"],
-                            database=CONF["MYSQL_DATABASE"])
-    except (pymysql.Error, KeyError):
-        logger.error('Cannot connect to database!')
-    else:
-        logger.info('Connected to database')
-        # check_db(CONN)
+    if CONF["DBMS"] == "mysql":
+        try:
+            conn = pymysql.connect(host=CONF.get("DBMS_HOST", ''),
+                                   port=CONF.get("DBMS_PORT", 3306),
+                                   user=CONF["DBMS_USER"],
+                                   password=CONF["DBMS_PASSWORD"],
+                                   database=CONF["DBMS_DATABASE"])
+        except (pymysql.Error, KeyError) as err:
+            logger.error(f'Cannot connect to database!: {err}')
+        else:
+            logger.info('Connected to database')
+            # check_db(CONN)
 
-    #CUR = CONN.cursor(pymysql.cursors.DictCursor)
+        #CUR = CONN.cursor(pymysql.cursors.DictCursor)
+    elif CONF["DBMS"] == "postgresql":
+        try:
+            conn = psycopg2.connect(
+                    dbname=CONF["DBMS_DATABASE"], 
+                    user=CONF["DBMS_USER"], 
+                    password=CONF["DBMS_PASSWORD"]
+                    )
+        except (psycopg2.Error, KeyError) as err:
+            logger.error(f'Cannot connect to database!: {err}')
+        else:
+            logger.info('Connected to database')
+
     return conn
 
 
-check_db()
+def connect_pgsql():
+    """ Connect to the PostgreSQL database server """
+    conn = None
+    try:
+        # read connection parameters
+        params = config()
+
+        # connect to the PostgreSQL server
+        print('Connecting to the PostgreSQL database...')
+        conn = psycopg2.connect(**params)
+		
+        # create a cursor
+        cur = conn.cursor()
+        
+	# execute a statement
+        print('PostgreSQL database version:')
+        cur.execute('SELECT version()')
+
+        # display the PostgreSQL database server version
+        db_version = cur.fetchone()
+        print(db_version)
+       
+	# close the communication with the PostgreSQL
+        cur.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
+            print('Database connection closed.')
+
+
+if check_db():
+    logger.debug('Database check OK.')
+else:
+    logger.info('Database check Failed.')
+
 BASE_URL = 'https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range'
 
 
